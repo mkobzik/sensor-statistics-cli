@@ -18,4 +18,6 @@ object models {
     final case object Failed extends Humidity
   }
 
+  final case class Sample(sensor: Sensor, humidity: Humidity)
+
 }

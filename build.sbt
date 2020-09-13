@@ -17,6 +17,7 @@ lazy val root = (project in file("."))
       "org.typelevel" %% "cats-tagless-macros" % "0.11",
       "dev.profunktor" %% "console4cats" % "0.8.1",
       "co.fs2" %% "fs2-core" % "2.4.4",
+      "co.fs2" %% "fs2-io" % "2.4.4",
       "io.estatico" %% "newtype" % "0.4.4",
     )
   )

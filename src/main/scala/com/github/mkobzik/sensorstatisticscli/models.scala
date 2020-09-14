@@ -40,6 +40,12 @@ object models {
 
   }
 
+  @newtype final case class SumHumidity(value: Humidity)
+
+  object SumHumidity {
+    implicit val sumHumidityShow: Show[SumHumidity] = Show.show(sumHumidity => show"Sum${sumHumidity.value}")
+  }
+
   sealed trait Humidity extends Product with Serializable
 
   object Humidity {

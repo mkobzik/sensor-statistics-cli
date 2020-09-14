@@ -2,6 +2,7 @@ package com.github.mkobzik.sensorstatisticscli
 
 import cats.Show
 import cats.implicits.showInterpolator
+import cats.kernel.Order
 import com.github.mkobzik.sensorstatisticscli.models.Sensor.{AvgHumidity, Id, MaxHumidity, MinHumidity}
 import io.estatico.newtype.macros.newtype
 
@@ -39,7 +40,7 @@ object models {
 
   }
 
-  sealed trait Humidity
+  sealed trait Humidity extends Product with Serializable
 
   object Humidity {
     final case class Measured(value: Int) extends Humidity
@@ -48,6 +49,13 @@ object models {
     implicit val humidityShow: Show[Humidity] = Show.show[Humidity] {
       case Measured(value) => s"Humidity.Measured($value)"
       case Failed          => "Humidity.Failed"
+    }
+
+    implicit val humidityOrder: Order[Humidity] = Order.from {
+      case (Measured(_), Failed)        => 1
+      case (Failed, Measured(_))        => -1
+      case (Measured(v0), Measured(v1)) => v0.compareTo(v1)
+      case (Failed, Failed)             => 0
     }
 
   }

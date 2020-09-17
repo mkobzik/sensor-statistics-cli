@@ -9,7 +9,7 @@ import fs2.{Pipe, text}
 
 @finalAlg
 trait SensorStatistics[F[_]] {
-  def calculate(dailyReportsDir: Path): F[Statistics]
+  def calculate(dailyReportDir: Path): F[Statistics]
 }
 
 object SensorStatistics {
@@ -17,9 +17,9 @@ object SensorStatistics {
   implicit def instance[F[_]: SensorStatisticsProcessor: Sync: ContextShift](blocker: Blocker): SensorStatistics[F] =
     new SensorStatistics[F] {
 
-      override def calculate(dailyReportsDir: Path): F[Statistics] =
+      override def calculate(dailyReportDir: Path): F[Statistics] =
         fs2.io.file
-          .directoryStream(blocker, dailyReportsDir)
+          .directoryStream(blocker, dailyReportDir)
           .flatMap { report =>
             fs2.io.file
               .readAll(report, blocker, 4096)

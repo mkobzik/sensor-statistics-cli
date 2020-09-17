@@ -21,7 +21,6 @@ lazy val root = (project in file("."))
       "co.fs2" %% "fs2-io" % "2.4.4",
       "io.estatico" %% "newtype" % "0.4.4",
       "com.monovore" %% "decline-effect" % "1.3.0",
-      "org.typelevel" %% "simulacrum" % "1.0.0",
       "org.tpolecat" %% "atto-core" % "0.8.0",
       "org.scalameta" %% "munit" % "0.7.12" % Test
     ),

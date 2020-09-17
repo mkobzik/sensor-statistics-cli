@@ -8,7 +8,6 @@ import cats.effect.{Blocker, Console, ExitCode, IO}
 import cats.syntax.all._
 import com.monovore.decline._
 import com.monovore.decline.effect._
-import PrettyShow.ops._
 import buildinfo.BuildInfo
 
 object App
@@ -32,7 +31,7 @@ object App
   private def program[F[_]: SensorStatistics: Console: Monad](path: Path): F[Unit] = for {
     _     <- Console[F].putStrLn("Calculating statistics...")
     stats <- SensorStatistics[F].calculate(path)
-    _     <- Console[F].putStrLn(stats.prettyShow)
+    _     <- Console[F].putStrLn(stats)
   } yield ()
 
 }

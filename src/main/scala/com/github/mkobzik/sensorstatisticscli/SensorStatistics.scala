@@ -14,16 +14,20 @@ trait SensorStatistics[F[_]] {
 
 object SensorStatistics {
 
+  type FileIndex = Long
+
   implicit def instance[F[_]: SensorStatisticsProcessor: Sync: ContextShift](blocker: Blocker): SensorStatistics[F] =
     new SensorStatistics[F] {
 
       override def calculate(dailyReportDir: Path): F[Statistics] =
         fs2.io.file
           .directoryStream(blocker, dailyReportDir)
-          .flatMap { report =>
+          .zipWithIndex
+          .flatMap { case (report, fileIndex) =>
             fs2.io.file
               .readAll(report, blocker, 4096)
               .through(parseCsv)
+              .map(sample => sample -> fileIndex)
           }
           .through(SensorStatisticsProcessor[F].createStatistics)
           .compile

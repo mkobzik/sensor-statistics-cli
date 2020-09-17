@@ -1,26 +1,27 @@
 package com.github.mkobzik.sensorstatisticscli
 
 import cats.kernel.Order
+import cats.syntax.all._
 import cats.tagless.finalAlg
+import com.github.mkobzik.sensorstatisticscli.SensorStatistics.FileIndex
 import com.github.mkobzik.sensorstatisticscli.models.Sensor.{AvgHumidity, MaxHumidity, MinHumidity}
 import com.github.mkobzik.sensorstatisticscli.models._
 import fs2.Pipe
-import cats.syntax.all._
 
 @finalAlg
 trait SensorStatisticsProcessor[F[_]] {
-  def createStatistics: Pipe[F, Sample, Statistics]
+  def createStatistics: Pipe[F, (Sample, FileIndex), Statistics]
 }
 
 object SensorStatisticsProcessor {
 
   implicit def instance[F[_]]: SensorStatisticsProcessor[F] = new SensorStatisticsProcessor[F] {
 
-    override def createStatistics: Pipe[F, Sample, Statistics] =
-      _.fold((0, 0, 0, Map.empty[Sensor.Id, (Int, SumHumidity, MinHumidity, MaxHumidity)])) {
-        case ((numberOfProcessedFiles, numberOfProcessedMeasurements, numberOfFailedMeasurements, sensors), sample) =>
+    override def createStatistics: Pipe[F, (Sample, FileIndex), Statistics] =
+      _.fold((0L, 0L, 0L, Map.empty[Sensor.Id, (Int, SumHumidity, MinHumidity, MaxHumidity)])) {
+        case ((numberOfProcessedFiles, numberOfProcessedMeasurements, numberOfFailedMeasurements, sensors), (sample, fileIndex)) =>
           (
-            numberOfProcessedFiles,
+            Order[Long].max(numberOfProcessedFiles, fileIndex + 1),
             numberOfProcessedMeasurements + 1,
             if (sample.humidity == Humidity.Failed) numberOfFailedMeasurements + 1 else numberOfFailedMeasurements,
             sensors + (sample.sensorId -> sensors

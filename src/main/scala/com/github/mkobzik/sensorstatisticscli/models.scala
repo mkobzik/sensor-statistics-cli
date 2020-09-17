@@ -89,9 +89,9 @@ object models {
   }
 
   final case class Statistics(
-      numberOfProcessedFiles: Int,
-      numberOfProcessedMeasurements: Int,
-      numberOfFailedMeasurements: Int,
+      numberOfProcessedFiles: Long,
+      numberOfProcessedMeasurements: Long,
+      numberOfFailedMeasurements: Long,
       sensors: List[Sensor]
   )
 

@@ -1,0 +1,6 @@
+sensor-id,humidity
+1,UnknownString
+1, NaN
+UnknownString,100
+2,200
+2,-10

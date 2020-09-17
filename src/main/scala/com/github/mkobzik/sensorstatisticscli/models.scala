@@ -17,7 +17,7 @@ object models {
   final case class Sensor(id: Id, minHumidity: MinHumidity, avgHumidity: AvgHumidity, maxHumidity: MaxHumidity)
 
   object Sensor {
-    @newtype final case class Id(value: Int)
+    @newtype final case class Id(value: Long)
     @newtype final case class MinHumidity(value: Humidity)
     @newtype final case class AvgHumidity(value: Humidity)
     @newtype final case class MaxHumidity(value: Humidity)
@@ -30,7 +30,7 @@ object models {
   sealed trait Humidity extends Product with Serializable
 
   object Humidity {
-    final case class Measured(value: Int) extends Humidity
+    final case class Measured(value: Double) extends Humidity
     final case object Failed extends Humidity
 
     implicit val humidityPrettyShow: Show[Humidity] = Show.show[Humidity] {

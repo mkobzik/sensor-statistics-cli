@@ -41,7 +41,7 @@ object SensorStatistics {
           .map(lineToSample)
 
       private def lineToSample(line: String): Sample = {
-        val idParser = (int <~ char(',')).map(Sensor.Id.apply)
+        val idParser = (long <~ char(',')).map(Sensor.Id.apply)
         val humidityParser = (string("NaN") || int).map {
           case Left(_)      => Humidity.Failed
           case Right(value) => Humidity.Measured(value)

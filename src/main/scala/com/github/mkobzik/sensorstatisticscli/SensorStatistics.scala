@@ -4,11 +4,11 @@ import java.nio.file.Path
 
 import cats.effect.{Blocker, ContextShift, Sync}
 import cats.kernel.Order
-import cats.tagless.finalAlg
-import com.github.mkobzik.sensorstatisticscli.models.{Humidity, Sample, Sensor, Statistics, SumHumidity}
-import fs2.{Pipe, text}
 import cats.syntax.all._
+import cats.tagless.finalAlg
 import com.github.mkobzik.sensorstatisticscli.models.Sensor.{AvgHumidity, MaxHumidity, MinHumidity}
+import com.github.mkobzik.sensorstatisticscli.models._
+import fs2.{Pipe, text}
 
 @finalAlg
 trait SensorStatistics[F[_]] {
@@ -60,7 +60,7 @@ object SensorStatistics {
               .map { case (n, sumHumidity, minHumidity, maxHumidity) =>
                 (
                   if (sample.humidity == Humidity.Failed) n else n + 1,
-                  this.sumHumidity(sumHumidity, sample.humidity),
+                  SumHumidity(sumHumidity.value |+| sample.humidity),
                   this.minHumidity(minHumidity, sample.humidity),
                   this.maxHumidity(maxHumidity, sample.humidity)
                 )
@@ -95,12 +95,6 @@ object SensorStatistics {
       case (currentAny, Humidity.Failed)                                        => currentAny
       case (Humidity.Failed, newMeasured: Humidity.Measured)                    => newMeasured
       case (currentMeasured: Humidity.Measured, newMeasured: Humidity.Measured) => Order[Humidity].max(currentMeasured, newMeasured)
-    })
-
-    private def sumHumidity(sumHumidity: SumHumidity, humidity: Humidity) = SumHumidity((sumHumidity.value, humidity) match {
-      case (currentAny, Humidity.Failed)                     => currentAny
-      case (Humidity.Failed, newMeasured: Humidity.Measured) => newMeasured
-      case (Humidity.Measured(v0), Humidity.Measured(v1))    => Humidity.Measured(v0 + v1)
     })
 
     private def avgHumidity(n: Int, sumHumidity: SumHumidity) = AvgHumidity(sumHumidity.value match {

@@ -2,7 +2,7 @@ package com.github.mkobzik.sensorstatisticscli
 
 import cats.Show
 import cats.implicits.showInterpolator
-import cats.kernel.Order
+import cats.kernel.{Order, Semigroup}
 import com.github.mkobzik.sensorstatisticscli.models.Sensor.{AvgHumidity, Id, MaxHumidity, MinHumidity}
 import io.estatico.newtype.macros.newtype
 
@@ -62,6 +62,12 @@ object models {
       case (Failed, Measured(_))        => -1
       case (Measured(v0), Measured(v1)) => v0.compareTo(v1)
       case (Failed, Failed)             => 0
+    }
+
+    implicit val humiditySemigroup: Semigroup[Humidity] = Semigroup.instance {
+      case (h0, Failed)                 => h0
+      case (Failed, m0: Measured)       => m0
+      case (Measured(v0), Measured(v1)) => Measured(v0 + v1)
     }
 
   }

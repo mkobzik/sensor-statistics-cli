@@ -2,7 +2,7 @@ package com.github.mkobzik.sensorstatisticscli
 
 import cats.Show
 import cats.implicits.showInterpolator
-import cats.kernel.{Order, Semigroup}
+import cats.kernel.Order
 import com.github.mkobzik.sensorstatisticscli.PrettyShow.ops._
 import com.github.mkobzik.sensorstatisticscli.models.Sensor.{AvgHumidity, Id, MaxHumidity, MinHumidity}
 import com.github.mkobzik.sensorstatisticscli.models.Statistics.{
@@ -50,12 +50,6 @@ object models {
 
   }
 
-  @newtype final case class SumHumidity(value: Humidity)
-
-  object SumHumidity {
-    implicit val sumHumidityShow: Show[SumHumidity] = Show.show(sumHumidity => show"Sum${sumHumidity.value}")
-  }
-
   sealed trait Humidity extends Product with Serializable
 
   object Humidity {
@@ -77,12 +71,6 @@ object models {
       case (Failed, Measured(_))        => -1
       case (Measured(v0), Measured(v1)) => v0.compareTo(v1)
       case (Failed, Failed)             => 0
-    }
-
-    implicit val humiditySemigroup: Semigroup[Humidity] = Semigroup.instance {
-      case (h0, Failed)                 => h0
-      case (Failed, m0: Measured)       => m0
-      case (Measured(v0), Measured(v1)) => Measured(v0 + v1)
     }
 
   }

@@ -3,7 +3,6 @@ package com.github.mkobzik.sensorstatisticscli
 import java.nio.file.Path
 
 import atto.Atto._
-import atto._
 import cats.effect.{Blocker, ContextShift, Sync}
 import cats.tagless.finalAlg
 import com.github.mkobzik.sensorstatisticscli.models._

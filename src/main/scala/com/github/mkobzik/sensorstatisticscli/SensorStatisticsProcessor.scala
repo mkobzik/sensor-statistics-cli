@@ -28,7 +28,7 @@ object SensorStatisticsProcessor {
           NumberOfProcessedFiles(0L),
           NumberOfProcessedMeasurements(0L),
           NumberOfFailedMeasurements(0L),
-          Map.empty[Sensor.Id, (Int, SumHumidity, MinHumidity, MaxHumidity)]
+          Map.empty[Sensor.Id, (Int, AvgHumidity, MinHumidity, MaxHumidity)]
         )
       ) { case ((numberOfProcessedFiles, numberOfProcessedMeasurements, numberOfFailedMeasurements, sensors), (sample, fileIndex)) =>
         (
@@ -38,10 +38,10 @@ object SensorStatisticsProcessor {
           else numberOfFailedMeasurements,
           sensors + (sample.sensorId -> sensors
             .get(sample.sensorId)
-            .map { case (n, sumHumidity, minHumidity, maxHumidity) =>
+            .map { case (previousN, avgHumidity, minHumidity, maxHumidity) =>
               (
-                if (sample.humidity == Humidity.Failed) n else n + 1,
-                SumHumidity(sumHumidity.value |+| sample.humidity),
+                if (sample.humidity == Humidity.Failed) previousN else previousN + 1,
+                this.avgHumidity(avgHumidity, sample.humidity, previousN + 1),
                 this.minHumidity(minHumidity, sample.humidity),
                 this.maxHumidity(maxHumidity, sample.humidity)
               )
@@ -49,7 +49,7 @@ object SensorStatisticsProcessor {
             .getOrElse(
               (
                 if (sample.humidity == Humidity.Failed) 0 else 1,
-                SumHumidity(sample.humidity),
+                AvgHumidity(sample.humidity),
                 MinHumidity(sample.humidity),
                 MaxHumidity(sample.humidity)
               )
@@ -61,8 +61,8 @@ object SensorStatisticsProcessor {
           numberOfProcessedMeasurements,
           numberOfFailedMeasurements,
           sensors.toList
-            .map { case (id, (n, sumHumidity, minHumidity, maxHumidity)) =>
-              Sensor(id, minHumidity, avgHumidity(n, sumHumidity), maxHumidity)
+            .map { case (id, (_, avgHumidity, minHumidity, maxHumidity)) =>
+              Sensor(id, minHumidity, avgHumidity, maxHumidity)
             }
             .sortBy(_.avgHumidity.value)(Order.reverse(Order[Humidity]).toOrdering)
         )
@@ -80,9 +80,10 @@ object SensorStatisticsProcessor {
       case (currentMeasured: Humidity.Measured, newMeasured: Humidity.Measured) => Order[Humidity].max(currentMeasured, newMeasured)
     })
 
-    private def avgHumidity(n: Int, sumHumidity: SumHumidity) = AvgHumidity(sumHumidity.value match {
-      case Humidity.Failed       => Humidity.Failed
-      case Humidity.Measured(v0) => Humidity.Measured(v0 / n)
+    private def avgHumidity(avgHumidity: AvgHumidity, humidity: Humidity, n: Int) = AvgHumidity((avgHumidity.value, humidity) match {
+      case (currentAny, Humidity.Failed)                                  => currentAny
+      case (Humidity.Failed, newMeasured: Humidity.Measured)              => newMeasured
+      case (Humidity.Measured(currentValue), Humidity.Measured(newValue)) => Humidity.Measured(currentValue + (newValue - currentValue) / n)
     })
 
   }

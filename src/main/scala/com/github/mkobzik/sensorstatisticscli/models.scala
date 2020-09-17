@@ -2,22 +2,28 @@ package com.github.mkobzik.sensorstatisticscli
 
 import cats.Show
 import cats.implicits.showInterpolator
-import cats.kernel.Order
+import cats.kernel.{Eq, Order}
 import cats.syntax.all._
-import com.github.mkobzik.sensorstatisticscli.models.Sensor.{AvgHumidity, Id, MaxHumidity, MinHumidity}
-import com.github.mkobzik.sensorstatisticscli.models.Statistics.{
-  NumberOfFailedMeasurements,
-  NumberOfProcessedFiles,
-  NumberOfProcessedMeasurements
-}
 import io.estatico.newtype.macros.newtype
 
 object models {
 
-  final case class Sensor(id: Id, minHumidity: MinHumidity, avgHumidity: AvgHumidity, maxHumidity: MaxHumidity)
+  final case class Sensor(
+      id: Sensor.Id,
+      numberOfProcessedMeasurements: Sensor.NumberOfProcessedMeasurements,
+      minHumidity: Sensor.MinHumidity,
+      avgHumidity: Sensor.AvgHumidity,
+      maxHumidity: Sensor.MaxHumidity
+  )
 
   object Sensor {
     @newtype final case class Id(value: Long)
+
+    object Id {
+      implicit val idEq: Eq[Id] = Eq.by(_.value)
+    }
+
+    @newtype final case class NumberOfProcessedMeasurements(value: Long)
     @newtype final case class MinHumidity(value: Humidity)
     @newtype final case class AvgHumidity(value: Humidity)
     @newtype final case class MaxHumidity(value: Humidity)
@@ -34,7 +40,7 @@ object models {
     final case object Failed extends Humidity
 
     implicit val humidityPrettyShow: Show[Humidity] = Show.show[Humidity] {
-      case Measured(value) => value.toString
+      case Measured(value) => value.toInt.toString
       case Failed          => "NaN"
     }
 
@@ -50,9 +56,9 @@ object models {
   final case class Sample(sensorId: Sensor.Id, humidity: Humidity)
 
   final case class Statistics(
-      numberOfProcessedFiles: NumberOfProcessedFiles,
-      numberOfProcessedMeasurements: NumberOfProcessedMeasurements,
-      numberOfFailedMeasurements: NumberOfFailedMeasurements,
+      numberOfProcessedFiles: Statistics.NumberOfProcessedFiles,
+      numberOfProcessedMeasurements: Statistics.NumberOfProcessedMeasurements,
+      numberOfFailedMeasurements: Statistics.NumberOfFailedMeasurements,
       sensors: List[Sensor]
   )
 

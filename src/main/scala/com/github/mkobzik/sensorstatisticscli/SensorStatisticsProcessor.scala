@@ -48,9 +48,11 @@ object SensorStatisticsProcessor {
           numberOfProcessedFiles,
           numberOfProcessedMeasurements,
           numberOfFailedMeasurements,
-          sensors.toList.map { case (id, (n, sumHumidity, minHumidity, maxHumidity)) =>
-            Sensor(id, minHumidity, avgHumidity(n, sumHumidity), maxHumidity)
-          }
+          sensors.toList
+            .map { case (id, (n, sumHumidity, minHumidity, maxHumidity)) =>
+              Sensor(id, minHumidity, avgHumidity(n, sumHumidity), maxHumidity)
+            }
+            .sortBy(_.avgHumidity.value)(Order.reverse(Order[Humidity]).toOrdering)
         )
       }.map((Statistics.apply _).tupled)
 

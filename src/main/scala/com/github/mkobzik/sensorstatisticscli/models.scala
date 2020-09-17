@@ -113,7 +113,7 @@ object models {
         |Sensors with highest avg humidity:
 
         |sensor-id,min,avg,max
-        |${statistics.sensors.sortBy(_.avgHumidity.value)(Order.reverse(Order[Humidity]).toOrdering).map(_.prettyShow).mkString("\n")}
+        |${statistics.sensors.map(_.prettyShow).mkString("\n")}
       """.stripMargin)
 
   }

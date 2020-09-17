@@ -2,6 +2,8 @@ package com.github.mkobzik.sensorstatisticscli
 
 import java.nio.file.Path
 
+import atto.Atto._
+import atto._
 import cats.effect.{Blocker, ContextShift, Sync}
 import cats.tagless.finalAlg
 import com.github.mkobzik.sensorstatisticscli.models._
@@ -40,14 +42,21 @@ object SensorStatistics {
           .map(lineToSample)
 
       private def lineToSample(line: String): Sample = {
-        val Array(rawId, rawHumidity) = line.split(",")
-        Sample(
-          Sensor.Id(rawId.toInt),
-          rawHumidity match {
-            case "NaN" => Humidity.Failed
-            case x     => Humidity.Measured(x.toInt)
-          }
-        )
+        val idParser = (int <~ char(',')).map(Sensor.Id.apply)
+        val humidityParser = (string("NaN") || int).map {
+          case Left(_)      => Humidity.Failed
+          case Right(value) => Humidity.Measured(value)
+        }
+        val sampleParser = (idParser ~ humidityParser).map((Sample.apply _).tupled)
+
+        sampleParser
+          .parseOnly(line)
+          .either
+          .getOrElse(
+            throw new RuntimeException(
+              s"Failed to parse line: '$line'. Line should be in format '<sensor_id:long>,<humidity:{NaN,[0-100]}>'"
+            )
+          )
       }
 
     }

@@ -22,8 +22,9 @@ lazy val root = (project in file("."))
       "io.estatico" %% "newtype" % "0.4.4",
       "com.monovore" %% "decline-effect" % "1.3.0",
       "org.typelevel" %% "simulacrum" % "1.0.0",
+      "org.tpolecat" %% "atto-core" % "0.8.0",
       "org.scalameta" %% "munit" % "0.7.12" % Test
     ),
     testFrameworks += new TestFramework("munit.Framework"),
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion),
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion)
   )

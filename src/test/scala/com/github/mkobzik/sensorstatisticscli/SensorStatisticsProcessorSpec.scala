@@ -18,7 +18,7 @@ class SensorStatisticsProcessorSpec extends FunSuite {
       (Sample(Sensor.Id(1), Humidity.Measured(30)), 2L),
       (Sample(Sensor.Id(1), Humidity.Measured(20)), 1L)
     ),
-    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles, 3L)
+    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value, 3L)
   )
 
   check(
@@ -30,8 +30,8 @@ class SensorStatisticsProcessorSpec extends FunSuite {
       (Sample(Sensor.Id(3), Humidity.Measured(20)), 1L)
     ),
     obtainedStatistics => {
-      assertEquals(obtainedStatistics.numberOfProcessedMeasurements, 4L)
-      assertEquals(obtainedStatistics.numberOfFailedMeasurements, 2L)
+      assertEquals(obtainedStatistics.numberOfProcessedMeasurements.value, 4L)
+      assertEquals(obtainedStatistics.numberOfFailedMeasurements.value, 2L)
     }
   )
 

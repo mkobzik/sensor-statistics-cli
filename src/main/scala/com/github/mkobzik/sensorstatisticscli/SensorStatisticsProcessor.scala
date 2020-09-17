@@ -5,6 +5,11 @@ import cats.syntax.all._
 import cats.tagless.finalAlg
 import com.github.mkobzik.sensorstatisticscli.SensorStatistics.FileIndex
 import com.github.mkobzik.sensorstatisticscli.models.Sensor.{AvgHumidity, MaxHumidity, MinHumidity}
+import com.github.mkobzik.sensorstatisticscli.models.Statistics.{
+  NumberOfFailedMeasurements,
+  NumberOfProcessedFiles,
+  NumberOfProcessedMeasurements
+}
 import com.github.mkobzik.sensorstatisticscli.models._
 import fs2.Pipe
 
@@ -18,31 +23,38 @@ object SensorStatisticsProcessor {
   implicit def instance[F[_]]: SensorStatisticsProcessor[F] = new SensorStatisticsProcessor[F] {
 
     override def createStatistics: Pipe[F, (Sample, FileIndex), Statistics] =
-      _.fold((0L, 0L, 0L, Map.empty[Sensor.Id, (Int, SumHumidity, MinHumidity, MaxHumidity)])) {
-        case ((numberOfProcessedFiles, numberOfProcessedMeasurements, numberOfFailedMeasurements, sensors), (sample, fileIndex)) =>
-          (
-            Order[Long].max(numberOfProcessedFiles, fileIndex + 1),
-            numberOfProcessedMeasurements + 1,
-            if (sample.humidity == Humidity.Failed) numberOfFailedMeasurements + 1 else numberOfFailedMeasurements,
-            sensors + (sample.sensorId -> sensors
-              .get(sample.sensorId)
-              .map { case (n, sumHumidity, minHumidity, maxHumidity) =>
-                (
-                  if (sample.humidity == Humidity.Failed) n else n + 1,
-                  SumHumidity(sumHumidity.value |+| sample.humidity),
-                  this.minHumidity(minHumidity, sample.humidity),
-                  this.maxHumidity(maxHumidity, sample.humidity)
-                )
-              }
-              .getOrElse(
-                (
-                  if (sample.humidity == Humidity.Failed) 0 else 1,
-                  SumHumidity(sample.humidity),
-                  MinHumidity(sample.humidity),
-                  MaxHumidity(sample.humidity)
-                )
-              ))
-          )
+      _.fold(
+        (
+          NumberOfProcessedFiles(0L),
+          NumberOfProcessedMeasurements(0L),
+          NumberOfFailedMeasurements(0L),
+          Map.empty[Sensor.Id, (Int, SumHumidity, MinHumidity, MaxHumidity)]
+        )
+      ) { case ((numberOfProcessedFiles, numberOfProcessedMeasurements, numberOfFailedMeasurements, sensors), (sample, fileIndex)) =>
+        (
+          NumberOfProcessedFiles(Order[Long].max(numberOfProcessedFiles.value, fileIndex + 1)),
+          NumberOfProcessedMeasurements(numberOfProcessedMeasurements.value + 1),
+          if (sample.humidity == Humidity.Failed) NumberOfFailedMeasurements(numberOfFailedMeasurements.value + 1)
+          else numberOfFailedMeasurements,
+          sensors + (sample.sensorId -> sensors
+            .get(sample.sensorId)
+            .map { case (n, sumHumidity, minHumidity, maxHumidity) =>
+              (
+                if (sample.humidity == Humidity.Failed) n else n + 1,
+                SumHumidity(sumHumidity.value |+| sample.humidity),
+                this.minHumidity(minHumidity, sample.humidity),
+                this.maxHumidity(maxHumidity, sample.humidity)
+              )
+            }
+            .getOrElse(
+              (
+                if (sample.humidity == Humidity.Failed) 0 else 1,
+                SumHumidity(sample.humidity),
+                MinHumidity(sample.humidity),
+                MaxHumidity(sample.humidity)
+              )
+            ))
+        )
       }.map { case (numberOfProcessedFiles, numberOfProcessedMeasurements, numberOfFailedMeasurements, sensors) =>
         (
           numberOfProcessedFiles,

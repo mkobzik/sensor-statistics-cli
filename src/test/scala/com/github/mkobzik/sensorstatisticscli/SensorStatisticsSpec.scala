@@ -17,19 +17,19 @@ class SensorStatisticsSpec extends FunSuite {
   check(
     "Parsing single file",
     "/testcases/parsingsinglefile",
-    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles, 1L)
+    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value, 1L)
   )
 
   check(
     "Parsing multiple files",
     "/testcases/parsingmultiplefiles",
-    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles, 2L)
+    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value, 2L)
   )
 
   check(
     "Parsing only csv files",
     "/testcases/parsingonlycsvfiles",
-    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles, 1L)
+    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value, 1L)
   )
 
   checkFailing[RuntimeException](

@@ -3,9 +3,14 @@ package com.github.mkobzik.sensorstatisticscli
 import cats.Show
 import cats.implicits.showInterpolator
 import cats.kernel.{Order, Semigroup}
+import com.github.mkobzik.sensorstatisticscli.PrettyShow.ops._
 import com.github.mkobzik.sensorstatisticscli.models.Sensor.{AvgHumidity, Id, MaxHumidity, MinHumidity}
+import com.github.mkobzik.sensorstatisticscli.models.Statistics.{
+  NumberOfFailedMeasurements,
+  NumberOfProcessedFiles,
+  NumberOfProcessedMeasurements
+}
 import io.estatico.newtype.macros.newtype
-import PrettyShow.ops._
 
 object models {
 
@@ -89,13 +94,37 @@ object models {
   }
 
   final case class Statistics(
-      numberOfProcessedFiles: Long,
-      numberOfProcessedMeasurements: Long,
-      numberOfFailedMeasurements: Long,
+      numberOfProcessedFiles: NumberOfProcessedFiles,
+      numberOfProcessedMeasurements: NumberOfProcessedMeasurements,
+      numberOfFailedMeasurements: NumberOfFailedMeasurements,
       sensors: List[Sensor]
   )
 
   object Statistics {
+
+    @newtype final case class NumberOfProcessedFiles(value: Long)
+
+    object NumberOfProcessedFiles {
+      implicit val numberOfProcessedFilesShow: Show[NumberOfProcessedFiles] = Show.show(nopf => s"NumberOfProcessedFiles(${nopf.value})")
+    }
+
+    @newtype final case class NumberOfProcessedMeasurements(value: Long)
+
+    object NumberOfProcessedMeasurements {
+
+      implicit val numberOfProcessedMeasurementsShow: Show[NumberOfProcessedMeasurements] =
+        Show.show(nopm => s"NumberOfProcessedMeasurements(${nopm.value})")
+
+    }
+
+    @newtype final case class NumberOfFailedMeasurements(value: Long)
+
+    object NumberOfFailedMeasurements {
+
+      implicit val numberOfFailedMeasurementsShow: Show[NumberOfFailedMeasurements] =
+        Show.show(nofm => s"NumberOfFailedMeasurements(${nofm.value})")
+
+    }
 
     implicit val statisticsShow: Show[Statistics] = Show.show(statistics =>
       "Statistics(" +

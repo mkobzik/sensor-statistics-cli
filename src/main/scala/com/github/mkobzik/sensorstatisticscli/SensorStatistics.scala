@@ -23,7 +23,7 @@ object SensorStatistics {
 
       override def calculate(dailyReportDir: Path): F[Statistics] =
         fs2.io.file
-          .directoryStream(blocker, dailyReportDir)
+          .directoryStream(blocker, dailyReportDir, _.toFile.getName.endsWith(".csv"))
           .zipWithIndex
           .flatMap { case (report, fileIndex) =>
             fs2.io.file

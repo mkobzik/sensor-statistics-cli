@@ -26,6 +26,12 @@ class SensorStatisticsSpec extends FunSuite {
     obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles, 2L)
   )
 
+  check(
+    "Parsing only csv files",
+    "/testcases/parsingonlycsvfiles",
+    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles, 1L)
+  )
+
   checkFailing[RuntimeException](
     "Parsing corrupted file",
     "/testcases/parsingcorruptedfile"

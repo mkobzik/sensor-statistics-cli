@@ -7,6 +7,7 @@ inThisBuild(
 )
 
 lazy val root = (project in file("."))
+  .enablePlugins(BuildInfoPlugin)
   .settings(
     name := "sensor-statistics-cli",
     scalacOptions -= "-Xfatal-warnings",
@@ -21,5 +22,6 @@ lazy val root = (project in file("."))
       "io.estatico" %% "newtype" % "0.4.4",
       "com.monovore" %% "decline-effect" % "1.3.0",
       "org.typelevel" %% "simulacrum" % "1.0.0",
-    )
+    ),
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion),
   )

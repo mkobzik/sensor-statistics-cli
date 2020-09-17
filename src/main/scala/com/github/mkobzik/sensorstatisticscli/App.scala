@@ -9,8 +9,10 @@ import cats.syntax.all._
 import com.monovore.decline._
 import com.monovore.decline.effect._
 import PrettyShow.ops._
+import buildinfo.BuildInfo
 
-object App extends CommandIOApp(name = "sensor-statistics", header = "Calculate statistics from humidity sensor data") {
+object App
+    extends CommandIOApp(name = BuildInfo.name, header = "Calculate statistics from humidity sensor data", version = BuildInfo.version) {
 
   override def main: Opts[IO[ExitCode]] =
     Opts.argument[Path]("report_directory_path").map { path =>

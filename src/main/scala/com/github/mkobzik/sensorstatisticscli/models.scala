@@ -5,6 +5,7 @@ import cats.implicits.showInterpolator
 import cats.kernel.{Order, Semigroup}
 import com.github.mkobzik.sensorstatisticscli.models.Sensor.{AvgHumidity, Id, MaxHumidity, MinHumidity}
 import io.estatico.newtype.macros.newtype
+import PrettyShow.ops._
 
 object models {
 
@@ -38,6 +39,10 @@ object models {
     implicit val sensorShow: Show[Sensor] =
       Show.show(sensor => show"Sensor(${sensor.id}, ${sensor.minHumidity}, ${sensor.avgHumidity}, ${sensor.maxHumidity})")
 
+    implicit val sensorPrettyShow: PrettyShow[Sensor] = PrettyShow.prettyShow(sensor =>
+      s"${sensor.id.value},${sensor.minHumidity.value.prettyShow},${sensor.avgHumidity.value.prettyShow},${sensor.maxHumidity.value.prettyShow}"
+    )
+
   }
 
   @newtype final case class SumHumidity(value: Humidity)
@@ -55,6 +60,11 @@ object models {
     implicit val humidityShow: Show[Humidity] = Show.show[Humidity] {
       case Measured(value) => s"Humidity.Measured($value)"
       case Failed          => "Humidity.Failed"
+    }
+
+    implicit val humidityPrettyShow: PrettyShow[Humidity] = PrettyShow.prettyShow[Humidity] {
+      case Measured(value) => value.toString
+      case Failed          => "NaN"
     }
 
     implicit val humidityOrder: Order[Humidity] = Order.from {
@@ -94,6 +104,17 @@ object models {
         show"${statistics.numberOfFailedMeasurements}, " +
         show"${statistics.sensors})"
     )
+
+    implicit val statisticsPrettyShow: PrettyShow[Statistics] = PrettyShow.prettyShow(statistics => s"""
+        |Number of processed files: ${statistics.numberOfProcessedFiles}
+        |Number of processed measurements: ${statistics.numberOfProcessedMeasurements}
+        |Number of failed measurements: ${statistics.numberOfFailedMeasurements}
+
+        |Sensors with highest avg humidity:
+
+        |sensor-id,min,avg,max
+        |${statistics.sensors.sortBy(_.avgHumidity.value)(Order.reverse(Order[Humidity]).toOrdering).map(_.prettyShow).mkString("\n")}
+      """.stripMargin)
 
   }
 

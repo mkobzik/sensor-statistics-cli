@@ -8,6 +8,7 @@ import cats.effect.{Blocker, Console, ExitCode, IO}
 import cats.syntax.all._
 import com.monovore.decline._
 import com.monovore.decline.effect._
+import PrettyShow.ops._
 
 object App extends CommandIOApp(name = "sensor-statistics", header = "Calculate statistics from humidity sensor data") {
 
@@ -29,8 +30,7 @@ object App extends CommandIOApp(name = "sensor-statistics", header = "Calculate 
   private def program[F[_]: SensorStatistics: Console: Monad](path: Path): F[Unit] = for {
     _     <- Console[F].putStrLn("Calculating statistics...")
     stats <- SensorStatistics[F].calculate(path)
-    _     <- Console[F].putStrLn(stats)
-    _     <- stats.sensors.traverse_(sensor => Console[F].putStrLn(sensor))
+    _     <- Console[F].putStrLn(stats.prettyShow)
   } yield ()
 
 }

@@ -26,6 +26,7 @@ lazy val root = (project in file("."))
       "com.github.julien-truffaut" %% "monocle-macro" % "2.0.3",
       "org.scalameta" %% "munit" % "0.7.12" % Test
     ),
+    assemblyJarName := name.value + ".jar",
     testFrameworks += new TestFramework("munit.Framework"),
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion)
   )

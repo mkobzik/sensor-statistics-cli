@@ -3,6 +3,7 @@ package com.github.mkobzik.sensorstatisticscli
 import java.nio.file.Paths
 
 import cats.effect.{Blocker, ContextShift, IO}
+import com.github.mkobzik.sensorstatisticscli.errors.Error.{CorruptedCsv, HumidityOutOfRange, NotADirectory}
 import com.github.mkobzik.sensorstatisticscli.models.Statistics
 import munit.{FunSuite, Location}
 
@@ -32,9 +33,19 @@ class SensorStatisticsSpec extends FunSuite {
     obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value, 1L)
   )
 
-  checkFailing[RuntimeException](
+  checkFailing[CorruptedCsv](
     "Parsing corrupted file",
     "/testcases/parsingcorruptedfile"
+  )
+
+  checkFailing[HumidityOutOfRange](
+    "Parsing file with wrong humidity value",
+    "/testcases/parsingfilewithwronghumidity"
+  )
+
+  checkFailing[NotADirectory](
+    "Not a directory path",
+    "/testcases/parsingsinglefile/file0.csv"
   )
 
   private def check(name: String, testCasePath: String, assertions: Statistics => Unit)(implicit loc: Location): Unit =

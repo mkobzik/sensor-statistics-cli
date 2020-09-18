@@ -74,7 +74,7 @@ object models {
 
         |Sensors with highest avg humidity:
 
-        |sensor-id,min,avg,max
+        |\u001b[4msensor-id,min,avg,max\u001b[0m
         |${statistics.sensors.map(_.show).mkString("\n")}
       """.stripMargin)
 

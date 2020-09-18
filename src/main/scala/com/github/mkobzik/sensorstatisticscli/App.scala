@@ -12,12 +12,13 @@ import com.monovore.decline.effect._
 object App
     extends CommandIOApp(name = BuildInfo.name, header = "Calculate statistics from humidity sensor data", version = BuildInfo.version) {
 
-  override def main: Opts[IO[ExitCode]] =
+  override def main: Opts[IO[ExitCode]] = {
     Opts.argument[Path]("report_directory_path").map { path =>
       run(path)
     }
+  }
 
-  private def run(path: Path): IO[ExitCode] =
+  private def run(path: Path): IO[ExitCode] = {
     Blocker[IO]
       .evalMap { blocker =>
         implicit val sensorStatistics: SensorStatistics[IO] = SensorStatistics.instance[IO](blocker)
@@ -26,6 +27,7 @@ object App
       }
       .use(_ => IO.unit)
       .as(ExitCode.Success)
+  }
 
   private def program[F[_]: SensorStatistics: Console: Sync](path: Path): F[Unit] = (for {
     _     <- Console[F].putStrLn("Calculating statistics...")

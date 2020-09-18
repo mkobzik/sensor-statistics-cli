@@ -23,7 +23,7 @@ object SensorStatistics {
   implicit def instance[F[_]: SensorStatisticsProcessor: Sync: ContextShift](blocker: Blocker): SensorStatistics[F] =
     new SensorStatistics[F] {
 
-      override def calculate(dailyReportDir: Path): F[Statistics] =
+      override def calculate(dailyReportDir: Path): F[Statistics] = {
         isDirectory(dailyReportDir) *>
           fs2.io.file
             .directoryStream(blocker, dailyReportDir, _.toFile.getName.endsWith(".csv"))
@@ -37,18 +37,21 @@ object SensorStatistics {
             .through(SensorStatisticsProcessor[F].createStatistics)
             .compile
             .lastOrError
+      }
 
-      private def isDirectory(dailyReportDir: Path): F[Unit] =
+      private def isDirectory(dailyReportDir: Path): F[Unit] = {
         Sync[F].ifM(Sync[F].delay(dailyReportDir.toFile.isDirectory))(
           ifTrue = Sync[F].unit,
           ifFalse = Sync[F].raiseError(NotADirectory(dailyReportDir))
         )
+      }
 
-      private def parseCsv: Pipe[F, Byte, Sample] =
+      private def parseCsv: Pipe[F, Byte, Sample] = {
         _.through(text.utf8Decode)
           .through(text.lines)
           .drop(1) //header
           .evalMap(lineToSample)
+      }
 
       private def lineToSample(line: String): F[Sample] = {
         val idParser = (long <~ char(',')).map(Sensor.Id.apply)

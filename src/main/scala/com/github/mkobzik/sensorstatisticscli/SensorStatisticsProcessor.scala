@@ -12,6 +12,7 @@ import com.github.mkobzik.sensorstatisticscli.models.Statistics.{
 }
 import com.github.mkobzik.sensorstatisticscli.models._
 import fs2.Pipe
+import monocle.macros.syntax.lens._
 
 @finalAlg
 trait SensorStatisticsProcessor[F[_]] {
@@ -22,31 +23,46 @@ object SensorStatisticsProcessor {
 
   implicit def instance[F[_]]: SensorStatisticsProcessor[F] = new SensorStatisticsProcessor[F] {
 
-    override def createStatistics: Pipe[F, (Sample, FileIndex), Statistics] =
+    override def createStatistics: Pipe[F, (Sample, FileIndex), Statistics] = {
       _.fold(emptyStatistics) { case (statistics, (sample, fileIndex)) =>
-        Statistics(
-          NumberOfProcessedFiles(math.max(statistics.numberOfProcessedFiles.value, fileIndex + 1)),
-          NumberOfProcessedMeasurements(statistics.numberOfProcessedMeasurements.value + 1),
-          if (sample.humidity === Humidity.Failed) NumberOfFailedMeasurements(statistics.numberOfFailedMeasurements.value + 1)
-          else statistics.numberOfFailedMeasurements,
-          statistics.sensors
+        recalculateStatistics(statistics, sample, fileIndex)
+      }
+        .map(sortByAvgHumidityDesc)
+    }
+
+    private def recalculateStatistics(statistics: Statistics, sample: Sample, fileIndex: FileIndex) = {
+      statistics
+        .lens(_.numberOfProcessedFiles)
+        .modify(nopf => NumberOfProcessedFiles(math.max(nopf.value, fileIndex + 1)))
+        .lens(_.numberOfProcessedMeasurements)
+        .modify(nopm => NumberOfProcessedMeasurements(nopm.value + 1))
+        .lens(_.numberOfFailedMeasurements)
+        .modify(nofm => if (sample.humidity =!= Humidity.Failed) nofm else NumberOfFailedMeasurements(nofm.value + 1))
+        .lens(_.sensors)
+        .modify(s =>
+          s
             .find(_.id === sample.sensorId)
             .tupleRight(sample)
             .map((updateSensor _).tupled)
-            .getOrElse(sensorFrom(sample)) :: statistics.sensors.filterNot(_.id === sample.sensorId)
+            .getOrElse(sensorFrom(sample)) :: s.filterNot(_.id === sample.sensorId)
         )
-      }.map(statistics =>
-        statistics.copy(sensors = statistics.sensors.sortBy(_.avgHumidity.value)(Order.reverse(Order[Humidity]).toOrdering))
-      )
+    }
 
-    private def updateSensor(sensor: Sensor, sample: Sample) = Sensor(
-      sensor.id,
-      if (sample.humidity === Humidity.Failed) sensor.numberOfProcessedMeasurements
-      else Sensor.NumberOfProcessedMeasurements(sensor.numberOfProcessedMeasurements.value + 1),
-      minHumidity(sensor.minHumidity, sample.humidity),
-      avgHumidity(sensor.avgHumidity, sample.humidity, sensor.numberOfProcessedMeasurements.value + 1),
-      maxHumidity(sensor.maxHumidity, sample.humidity)
-    )
+    private def updateSensor(sensor: Sensor, sample: Sample) = {
+      sensor
+        .lens(_.minHumidity)
+        .modify(min => minHumidity(min, sample.humidity))
+        .lens(_.maxHumidity)
+        .modify(max => maxHumidity(max, sample.humidity))
+        .lens(_.avgHumidity)
+        .modify(avg => avgHumidity(avg, sample.humidity, sensor.numberOfProcessedMeasurements.value + 1))
+        .lens(_.numberOfProcessedMeasurements)
+        .modify(nopm => if (sample.humidity === Humidity.Failed) nopm else Sensor.NumberOfProcessedMeasurements(nopm.value + 1))
+    }
+
+    private def sortByAvgHumidityDesc(statistics: Statistics): Statistics = {
+      statistics.lens(_.sensors).modify(_.sortBy(_.avgHumidity.value)(Order.reverse(Order[Humidity]).toOrdering))
+    }
 
     private def minHumidity(minHumidity: MinHumidity, humidity: Humidity) = MinHumidity(
       (ignoreFailed orElse overrideFailed).applyOrElse((minHumidity.value, humidity), (Order[Humidity].min _).tupled)

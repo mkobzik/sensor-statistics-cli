@@ -22,8 +22,10 @@ lazy val root = (project in file("."))
       "io.estatico" %% "newtype" % "0.4.4",
       "com.monovore" %% "decline-effect" % "1.3.0",
       "org.tpolecat" %% "atto-core" % "0.8.0",
+      "org.tpolecat" %% "atto-refined" % "0.8.0",
       "com.github.julien-truffaut" %% "monocle-core"  % "2.0.3",
       "com.github.julien-truffaut" %% "monocle-macro" % "2.0.3",
+      "eu.timepit" %% "refined" % "0.9.15",
       "org.scalameta" %% "munit" % "0.7.12" % Test
     ),
     assemblyJarName := name.value + ".jar",

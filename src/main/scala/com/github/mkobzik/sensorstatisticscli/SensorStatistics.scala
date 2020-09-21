@@ -3,11 +3,13 @@ package com.github.mkobzik.sensorstatisticscli
 import java.nio.file.Path
 
 import atto.Atto._
+import atto.syntax.refined._
 import cats.ApplicativeError
 import cats.effect.{Blocker, ContextShift, Sync}
 import cats.syntax.all._
 import cats.tagless.finalAlg
-import com.github.mkobzik.sensorstatisticscli.errors.Error.{CorruptedCsv, HumidityOutOfRange, NotADirectory}
+import com.github.mkobzik.sensorstatisticscli.errors.Error.{CorruptedCsv, NotADirectory}
+import com.github.mkobzik.sensorstatisticscli.models.Humidity.ZeroToHundred
 import com.github.mkobzik.sensorstatisticscli.models._
 import fs2.{Pipe, text}
 
@@ -55,7 +57,7 @@ object SensorStatistics {
 
       private def lineToSample(line: String): F[Sample] = {
         val idParser = (long <~ char(',')).map(Sensor.Id.apply)
-        val humidityParser = (string("NaN") || int).map {
+        val humidityParser = (string("NaN") || double.refined[ZeroToHundred]).map {
           case Left(_)      => Humidity.Failed
           case Right(value) => Humidity.Measured(value)
         }
@@ -66,12 +68,6 @@ object SensorStatistics {
             .parseOnly(line)
             .either
             .leftMap(_ => CorruptedCsv(line))
-            .flatMap(s =>
-              s.humidity match {
-                case h @ Humidity.Measured(value) if value < 0 || value > 100 => HumidityOutOfRange(h).asLeft
-                case _                                                        => s.asRight
-              }
-            )
         )
       }
 

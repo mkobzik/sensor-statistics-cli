@@ -4,6 +4,7 @@ import cats.kernel.Order
 import cats.syntax.all._
 import cats.tagless.finalAlg
 import com.github.mkobzik.sensorstatisticscli.SensorStatistics.FileIndex
+import com.github.mkobzik.sensorstatisticscli.models.Humidity.ZeroToHundred
 import com.github.mkobzik.sensorstatisticscli.models.Sensor.{AvgHumidity, MaxHumidity, MinHumidity}
 import com.github.mkobzik.sensorstatisticscli.models.Statistics.{
   NumberOfFailedMeasurements,
@@ -11,6 +12,8 @@ import com.github.mkobzik.sensorstatisticscli.models.Statistics.{
   NumberOfProcessedMeasurements
 }
 import com.github.mkobzik.sensorstatisticscli.models._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.types.numeric.NonNegLong
 import fs2.Pipe
 import monocle.macros.syntax.lens._
 
@@ -33,11 +36,14 @@ object SensorStatisticsProcessor {
     private def recalculateStatistics(statistics: Statistics, sample: Sample, fileIndex: FileIndex) = {
       statistics
         .lens(_.numberOfProcessedFiles)
-        .modify(nopf => NumberOfProcessedFiles(math.max(nopf.value, fileIndex + 1)))
+        .modify(nopf => NumberOfProcessedFiles(NonNegLong.unsafeFrom(math.max(nopf.value, fileIndex + 1))))
         .lens(_.numberOfProcessedMeasurements)
-        .modify(nopm => NumberOfProcessedMeasurements(nopm.value + 1))
+        .modify(nopm => NumberOfProcessedMeasurements(NonNegLong.unsafeFrom(nopm.value + 1)))
         .lens(_.numberOfFailedMeasurements)
-        .modify(nofm => if (sample.humidity =!= Humidity.Failed) nofm else NumberOfFailedMeasurements(nofm.value + 1))
+        .modify(nofm =>
+          if (sample.humidity =!= Humidity.Failed) nofm
+          else NumberOfFailedMeasurements(NonNegLong.unsafeFrom(nofm.value + 1))
+        )
         .lens(_.sensors)
         .modify(s =>
           s
@@ -57,7 +63,9 @@ object SensorStatisticsProcessor {
         .lens(_.avgHumidity)
         .modify(avg => avgHumidity(avg, sample.humidity, sensor.numberOfProcessedMeasurements.value + 1))
         .lens(_.numberOfProcessedMeasurements)
-        .modify(nopm => if (sample.humidity === Humidity.Failed) nopm else Sensor.NumberOfProcessedMeasurements(nopm.value + 1))
+        .modify(nopm =>
+          if (sample.humidity === Humidity.Failed) nopm else Sensor.NumberOfProcessedMeasurements(NonNegLong.unsafeFrom(nopm.value + 1))
+        )
     }
 
     private def sortByAvgHumidityDesc(statistics: Statistics): Statistics = {
@@ -75,7 +83,7 @@ object SensorStatisticsProcessor {
     private def avgHumidity(avgHumidity: AvgHumidity, humidity: Humidity, n: Long) = {
       val calculateAvg: PartialFunction[(Humidity, Humidity), Humidity] = {
         case (Humidity.Measured(currentValue), Humidity.Measured(newValue)) =>
-          Humidity.Measured(currentValue + (newValue - currentValue) / n)
+          Humidity.Measured(ZeroToHundred.unsafeFrom(currentValue + (newValue - currentValue) / n))
       }
 
       AvgHumidity((ignoreFailed orElse overrideFailed orElse calculateAvg)((avgHumidity.value, humidity)))
@@ -86,7 +94,7 @@ object SensorStatisticsProcessor {
 
     private def sensorFrom(sample: Sample) = Sensor(
       sample.sensorId,
-      Sensor.NumberOfProcessedMeasurements(if (sample.humidity == Humidity.Failed) 0 else 1),
+      Sensor.NumberOfProcessedMeasurements(if (sample.humidity == Humidity.Failed) 0L else 1L),
       Sensor.MinHumidity(sample.humidity),
       Sensor.AvgHumidity(sample.humidity),
       Sensor.MaxHumidity(sample.humidity)

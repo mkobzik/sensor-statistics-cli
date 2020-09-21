@@ -4,6 +4,7 @@ import cats.Id
 import com.github.mkobzik.sensorstatisticscli.SensorStatistics.FileIndex
 import com.github.mkobzik.sensorstatisticscli.models.Sensor.{AvgHumidity, MaxHumidity, MinHumidity}
 import com.github.mkobzik.sensorstatisticscli.models.{Humidity, Sample, Sensor, Statistics}
+import eu.timepit.refined.auto._
 import munit.{FunSuite, Location}
 
 class SensorStatisticsProcessorSpec extends FunSuite {
@@ -13,25 +14,25 @@ class SensorStatisticsProcessorSpec extends FunSuite {
   check(
     "Calculating number of files",
     List(
-      (Sample(Sensor.Id(1), Humidity.Measured(10)), 0L),
-      (Sample(Sensor.Id(1), Humidity.Measured(10)), 0L),
-      (Sample(Sensor.Id(1), Humidity.Measured(30)), 2L),
-      (Sample(Sensor.Id(1), Humidity.Measured(20)), 1L)
+      (Sample(Sensor.Id(1), Humidity.Measured(10d)), 0L),
+      (Sample(Sensor.Id(1), Humidity.Measured(10d)), 0L),
+      (Sample(Sensor.Id(1), Humidity.Measured(30d)), 2L),
+      (Sample(Sensor.Id(1), Humidity.Measured(20d)), 1L)
     ),
-    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value, 3L)
+    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value.value, 3L)
   )
 
   check(
     "Calculating number of measurements",
     List(
       (Sample(Sensor.Id(1), Humidity.Failed), 0L),
-      (Sample(Sensor.Id(2), Humidity.Measured(30)), 2L),
+      (Sample(Sensor.Id(2), Humidity.Measured(30d)), 2L),
       (Sample(Sensor.Id(3), Humidity.Failed), 1L),
-      (Sample(Sensor.Id(3), Humidity.Measured(20)), 1L)
+      (Sample(Sensor.Id(3), Humidity.Measured(20d)), 1L)
     ),
     obtainedStatistics => {
-      assertEquals(obtainedStatistics.numberOfProcessedMeasurements.value, 4L)
-      assertEquals(obtainedStatistics.numberOfFailedMeasurements.value, 2L)
+      assertEquals(obtainedStatistics.numberOfProcessedMeasurements.value.value, 4L)
+      assertEquals(obtainedStatistics.numberOfFailedMeasurements.value.value, 2L)
     }
   )
 
@@ -39,9 +40,9 @@ class SensorStatisticsProcessorSpec extends FunSuite {
     "Sorting sensors by max avg",
     List(
       (Sample(Sensor.Id(1), Humidity.Failed), 0L),
-      (Sample(Sensor.Id(2), Humidity.Measured(30)), 2L),
+      (Sample(Sensor.Id(2), Humidity.Measured(30d)), 2L),
       (Sample(Sensor.Id(3), Humidity.Failed), 1L),
-      (Sample(Sensor.Id(3), Humidity.Measured(20)), 1L)
+      (Sample(Sensor.Id(3), Humidity.Measured(20d)), 1L)
     ),
     obtainedStatistics => assertEquals(obtainedStatistics.sensors.map(_.id), List(Sensor.Id(2), Sensor.Id(3), Sensor.Id(1)))
   )
@@ -50,18 +51,18 @@ class SensorStatisticsProcessorSpec extends FunSuite {
     "Calculating min humidity",
     List(
       (Sample(Sensor.Id(1), Humidity.Failed), 0L),
-      (Sample(Sensor.Id(2), Humidity.Measured(30)), 2L),
-      (Sample(Sensor.Id(2), Humidity.Measured(10)), 2L),
+      (Sample(Sensor.Id(2), Humidity.Measured(30d)), 2L),
+      (Sample(Sensor.Id(2), Humidity.Measured(10d)), 2L),
       (Sample(Sensor.Id(3), Humidity.Failed), 1L),
-      (Sample(Sensor.Id(3), Humidity.Measured(20)), 1L)
+      (Sample(Sensor.Id(3), Humidity.Measured(20d)), 1L)
     ),
     obtainedStatistics =>
       assertEquals(
         obtainedStatistics.sensors.sortBy(_.id.value).map(s => s.id -> s.minHumidity),
         List(
           Sensor.Id(1) -> MinHumidity(Humidity.Failed),
-          Sensor.Id(2) -> MinHumidity(Humidity.Measured(10)),
-          Sensor.Id(3) -> MinHumidity(Humidity.Measured(20))
+          Sensor.Id(2) -> MinHumidity(Humidity.Measured(10d)),
+          Sensor.Id(3) -> MinHumidity(Humidity.Measured(20d))
         )
       )
   )
@@ -70,18 +71,18 @@ class SensorStatisticsProcessorSpec extends FunSuite {
     "Calculating max humidity",
     List(
       (Sample(Sensor.Id(1), Humidity.Failed), 0L),
-      (Sample(Sensor.Id(2), Humidity.Measured(30)), 2L),
-      (Sample(Sensor.Id(2), Humidity.Measured(50)), 2L),
+      (Sample(Sensor.Id(2), Humidity.Measured(30d)), 2L),
+      (Sample(Sensor.Id(2), Humidity.Measured(50d)), 2L),
       (Sample(Sensor.Id(3), Humidity.Failed), 1L),
-      (Sample(Sensor.Id(3), Humidity.Measured(20)), 1L)
+      (Sample(Sensor.Id(3), Humidity.Measured(20d)), 1L)
     ),
     obtainedStatistics =>
       assertEquals(
         obtainedStatistics.sensors.sortBy(_.id.value).map(s => s.id -> s.maxHumidity),
         List(
           Sensor.Id(1) -> MaxHumidity(Humidity.Failed),
-          Sensor.Id(2) -> MaxHumidity(Humidity.Measured(50)),
-          Sensor.Id(3) -> MaxHumidity(Humidity.Measured(20))
+          Sensor.Id(2) -> MaxHumidity(Humidity.Measured(50d)),
+          Sensor.Id(3) -> MaxHumidity(Humidity.Measured(20d))
         )
       )
   )
@@ -90,18 +91,18 @@ class SensorStatisticsProcessorSpec extends FunSuite {
     "Calculating avg humidity",
     List(
       (Sample(Sensor.Id(1), Humidity.Failed), 0L),
-      (Sample(Sensor.Id(2), Humidity.Measured(30)), 2L),
-      (Sample(Sensor.Id(2), Humidity.Measured(20)), 2L),
+      (Sample(Sensor.Id(2), Humidity.Measured(30d)), 2L),
+      (Sample(Sensor.Id(2), Humidity.Measured(20d)), 2L),
       (Sample(Sensor.Id(3), Humidity.Failed), 1L),
-      (Sample(Sensor.Id(3), Humidity.Measured(20)), 1L)
+      (Sample(Sensor.Id(3), Humidity.Measured(20d)), 1L)
     ),
     obtainedStatistics =>
       assertEquals(
         obtainedStatistics.sensors.sortBy(_.id.value).map(s => s.id -> s.avgHumidity),
         List(
           Sensor.Id(1) -> AvgHumidity(Humidity.Failed),
-          Sensor.Id(2) -> AvgHumidity(Humidity.Measured(25)),
-          Sensor.Id(3) -> AvgHumidity(Humidity.Measured(20))
+          Sensor.Id(2) -> AvgHumidity(Humidity.Measured(25d)),
+          Sensor.Id(3) -> AvgHumidity(Humidity.Measured(20d))
         )
       )
   )

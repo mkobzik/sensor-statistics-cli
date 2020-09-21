@@ -4,9 +4,15 @@ import cats.Show
 import cats.implicits.showInterpolator
 import cats.kernel.{Eq, Order}
 import cats.syntax.all._
+import com.github.mkobzik.sensorstatisticscli.instances.RefinedInstances
+import eu.timepit.refined.W
+import eu.timepit.refined.api.{Refined, RefinedTypeOps}
+import eu.timepit.refined.auto._
+import eu.timepit.refined.numeric.Interval
+import eu.timepit.refined.types.numeric.NonNegLong
 import io.estatico.newtype.macros.newtype
 
-object models {
+object models extends RefinedInstances {
 
   final case class Sensor(
       id: Sensor.Id,
@@ -23,7 +29,7 @@ object models {
       implicit val idEq: Eq[Id] = Eq.by(_.value)
     }
 
-    @newtype final case class NumberOfProcessedMeasurements(value: Long)
+    @newtype final case class NumberOfProcessedMeasurements(value: NonNegLong)
     @newtype final case class MinHumidity(value: Humidity)
     @newtype final case class AvgHumidity(value: Humidity)
     @newtype final case class MaxHumidity(value: Humidity)
@@ -36,7 +42,10 @@ object models {
   sealed trait Humidity extends Product with Serializable
 
   object Humidity {
-    final case class Measured(value: Double) extends Humidity
+    type ZeroToHundred = Interval.Closed[W.`0.0`.T, W.`100.0`.T]
+    object ZeroToHundred extends RefinedTypeOps[Double Refined ZeroToHundred, Double]
+
+    final case class Measured(value: Double Refined ZeroToHundred) extends Humidity
     final case object Failed extends Humidity
 
     implicit val humidityPrettyShow: Show[Humidity] = Show.show[Humidity] {
@@ -47,7 +56,7 @@ object models {
     implicit val humidityOrder: Order[Humidity] = Order.from {
       case (Measured(_), Failed)        => 1
       case (Failed, Measured(_))        => -1
-      case (Measured(v0), Measured(v1)) => v0.compareTo(v1)
+      case (Measured(v0), Measured(v1)) => v0.value.compareTo(v1.value)
       case (Failed, Failed)             => 0
     }
 
@@ -63,9 +72,9 @@ object models {
   )
 
   object Statistics {
-    @newtype final case class NumberOfProcessedFiles(value: Long)
-    @newtype final case class NumberOfProcessedMeasurements(value: Long)
-    @newtype final case class NumberOfFailedMeasurements(value: Long)
+    @newtype final case class NumberOfProcessedFiles(value: NonNegLong)
+    @newtype final case class NumberOfProcessedMeasurements(value: NonNegLong)
+    @newtype final case class NumberOfFailedMeasurements(value: NonNegLong)
 
     implicit val statisticsShow: Show[Statistics] = Show.show(statistics => show"""
         |Number of processed files: ${statistics.numberOfProcessedFiles.value}

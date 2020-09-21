@@ -3,7 +3,7 @@ package com.github.mkobzik.sensorstatisticscli
 import java.nio.file.Paths
 
 import cats.effect.{Blocker, ContextShift, IO}
-import com.github.mkobzik.sensorstatisticscli.errors.Error.{CorruptedCsv, HumidityOutOfRange, NotADirectory}
+import com.github.mkobzik.sensorstatisticscli.errors.Error.{CorruptedCsv, NotADirectory}
 import com.github.mkobzik.sensorstatisticscli.models.Statistics
 import munit.{FunSuite, Location}
 
@@ -18,29 +18,24 @@ class SensorStatisticsSpec extends FunSuite {
   check(
     "Parsing single file",
     "/testcases/parsingsinglefile",
-    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value, 1L)
+    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value.value, 1L)
   )
 
   check(
     "Parsing multiple files",
     "/testcases/parsingmultiplefiles",
-    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value, 2L)
+    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value.value, 2L)
   )
 
   check(
     "Parsing only csv files",
     "/testcases/parsingonlycsvfiles",
-    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value, 1L)
+    obtainedStatistics => assertEquals(obtainedStatistics.numberOfProcessedFiles.value.value, 1L)
   )
 
   checkFailing[CorruptedCsv](
     "Parsing corrupted file",
     "/testcases/parsingcorruptedfile"
-  )
-
-  checkFailing[HumidityOutOfRange](
-    "Parsing file with wrong humidity value",
-    "/testcases/parsingfilewithwronghumidity"
   )
 
   checkFailing[NotADirectory](

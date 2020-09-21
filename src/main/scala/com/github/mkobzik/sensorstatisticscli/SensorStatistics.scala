@@ -2,8 +2,6 @@ package com.github.mkobzik.sensorstatisticscli
 
 import java.nio.file.Path
 
-import atto.Atto._
-import atto.syntax.refined._
 import cats.ApplicativeError
 import cats.effect.{Blocker, ContextShift, Sync}
 import cats.syntax.all._
@@ -11,6 +9,8 @@ import cats.tagless.finalAlg
 import com.github.mkobzik.sensorstatisticscli.errors.Error.{CorruptedCsv, NotADirectory}
 import com.github.mkobzik.sensorstatisticscli.models.Humidity.ZeroToHundred
 import com.github.mkobzik.sensorstatisticscli.models._
+import fastparse.NoWhitespace._
+import fastparse._
 import fs2.{Pipe, text}
 
 @finalAlg
@@ -56,18 +56,18 @@ object SensorStatistics {
       }
 
       private def lineToSample(line: String): F[Sample] = {
-        val idParser = (long <~ char(',')).map(Sensor.Id.apply)
-        val humidityParser = (string("NaN") || double.refined[ZeroToHundred]).map {
-          case Left(_)      => Humidity.Failed
-          case Right(value) => Humidity.Measured(value)
-        }
-        val sampleParser = (idParser ~ humidityParser).map((Sample.apply _).tupled)
+        def sensorIdParser[_: P] = P(CharIn("0-9").rep(1).!.map(v => Sensor.Id(v.toLong)))
+        def commaParser[_: P] = P(",")
+        def humidityParser[_: P] =
+          P("NaN".!.map(_ => Humidity.Failed) | CharIn("0-9").rep(1).!.map(v => Humidity.Measured(ZeroToHundred.unsafeFrom(v.toDouble))))
+
+        def lineParser[_: P] = P(sensorIdParser ~ commaParser ~ humidityParser ~ End)
 
         ApplicativeError[F, Throwable].fromEither(
-          sampleParser
-            .parseOnly(line)
-            .either
-            .leftMap(_ => CorruptedCsv(line))
+          parse(line, lineParser(_)).fold(
+            onFailure = (_, _, _) => CorruptedCsv(line).asLeft,
+            onSuccess = { case ((sensorId, humidity), _) => Sample(sensorId, humidity).asRight }
+          )
         )
       }
 

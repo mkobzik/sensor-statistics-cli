@@ -1,4 +1,5 @@
 # sensor-statistics-cli
+![build status](https://github.com/mkobzik/sensor-statistics-cli/workflows/build/badge.svg?branch=master)
 
 Command line tool that calculates statistics from humidity sensor data.
 

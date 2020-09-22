@@ -1,4 +1,4 @@
-name: CI
+name: build
 
 on: [push, pull_request]
 
@@ -23,4 +23,4 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
       - name: Test
-        run: sbt test
+        run: csbt test

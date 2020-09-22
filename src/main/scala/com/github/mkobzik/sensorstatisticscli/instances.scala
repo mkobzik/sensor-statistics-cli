@@ -5,9 +5,9 @@ import eu.timepit.refined.api.Refined
 
 object instances {
 
-  object refined extends RefinedInstances
+  object cats extends CatsInstances
 
-  trait RefinedInstances {
+  trait CatsInstances {
 
     implicit def refinedShow[T, P](implicit ev: Show[T]): Show[T Refined P] = Show.show(t => ev.show(t.value))
 

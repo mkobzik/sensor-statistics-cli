@@ -4,7 +4,7 @@ import cats.Show
 import cats.implicits.showInterpolator
 import cats.kernel.{Eq, Order}
 import cats.syntax.all._
-import com.github.mkobzik.sensorstatisticscli.instances.RefinedInstances
+import com.github.mkobzik.sensorstatisticscli.instances.CatsInstances
 import eu.timepit.refined.W
 import eu.timepit.refined.api.{Refined, RefinedTypeOps}
 import eu.timepit.refined.auto._
@@ -12,7 +12,7 @@ import eu.timepit.refined.numeric.Interval
 import eu.timepit.refined.types.numeric.NonNegLong
 import io.estatico.newtype.macros.newtype
 
-object models extends RefinedInstances {
+object models extends CatsInstances {
 
   final case class Sensor(
       id: Sensor.Id,

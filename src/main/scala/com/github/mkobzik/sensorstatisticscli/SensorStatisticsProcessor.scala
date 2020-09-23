@@ -49,7 +49,7 @@ object SensorStatisticsProcessor {
           s
             .find(_.id === sample.sensorId)
             .tupleRight(sample)
-            .map((updateSensor _).tupled)
+            .map { case (sensor, sample) => updateSensor(sensor, sample) }
             .getOrElse(sensorFrom(sample)) :: s.filterNot(_.id === sample.sensorId)
         )
     }
@@ -73,11 +73,13 @@ object SensorStatisticsProcessor {
     }
 
     private def minHumidity(minHumidity: MinHumidity, humidity: Humidity) = MinHumidity(
-      (ignoreFailed orElse overrideFailed).applyOrElse((minHumidity.value, humidity), (Order[Humidity].min _).tupled)
+      (ignoreFailed orElse overrideFailed)
+        .applyOrElse[(Humidity, Humidity), Humidity]((minHumidity.value, humidity), { case (h0, h1) => Order[Humidity].min(h0, h1) })
     )
 
     private def maxHumidity(minHumidity: MaxHumidity, humidity: Humidity) = MaxHumidity(
-      (ignoreFailed orElse overrideFailed).applyOrElse((minHumidity.value, humidity), (Order[Humidity].max _).tupled)
+      (ignoreFailed orElse overrideFailed)
+        .applyOrElse[(Humidity, Humidity), Humidity]((minHumidity.value, humidity), { case (h0, h1) => Order[Humidity].max(h0, h1) })
     )
 
     private def avgHumidity(avgHumidity: AvgHumidity, humidity: Humidity, n: Long) = {

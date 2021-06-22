@@ -3,7 +3,6 @@ package com.github.mkobzik.sensorstatisticscli
 import java.nio.file.Path
 
 import buildinfo.BuildInfo
-import cats.effect.Blocker
 import cats.effect.ExitCode
 import cats.effect.IO
 import cats.effect.Sync
@@ -19,15 +18,11 @@ object App
       run(path)
     }
 
-  private def run(path: Path): IO[ExitCode] =
-    Blocker[IO]
-      .evalMap { blocker =>
-        implicit val sensorStatistics: SensorStatistics[IO] = SensorStatistics.instance[IO](blocker)
+  private def run(path: Path): IO[ExitCode] = {
+    implicit val sensorStatistics: SensorStatistics[IO] = SensorStatistics.instance[IO]
 
-        program[IO](path)
-      }
-      .use(_ => IO.unit)
-      .as(ExitCode.Success)
+    program[IO](path).as(ExitCode.Success)
+  }
 
   private def program[F[_]: SensorStatistics: Sync](path: Path): F[Unit] =
     (for {

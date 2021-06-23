@@ -35,16 +35,16 @@ object SensorStatisticsProcessor {
 
     private def recalculateStatistics(statistics: Statistics, sample: Sample, fileIndex: FileIndex) = {
       statistics
-        .lens(_.numberOfProcessedFiles)
+        .focus(_.numberOfProcessedFiles)
         .modify(nopf => NumberOfProcessedFiles(NonNegLong.unsafeFrom(math.max(nopf.value, fileIndex + 1))))
-        .lens(_.numberOfProcessedMeasurements)
+        .focus(_.numberOfProcessedMeasurements)
         .modify(nopm => NumberOfProcessedMeasurements(NonNegLong.unsafeFrom(nopm.value + 1)))
-        .lens(_.numberOfFailedMeasurements)
+        .focus(_.numberOfFailedMeasurements)
         .modify(nofm =>
           if (sample.humidity =!= Humidity.Failed) nofm
           else NumberOfFailedMeasurements(NonNegLong.unsafeFrom(nofm.value + 1))
         )
-        .lens(_.sensors)
+        .focus(_.sensors)
         .modify(s =>
           s
             .find(_.id === sample.sensorId)
@@ -56,20 +56,20 @@ object SensorStatisticsProcessor {
 
     private def updateSensor(sensor: Sensor, sample: Sample) = {
       sensor
-        .lens(_.minHumidity)
+        .focus(_.minHumidity)
         .modify(min => minHumidity(min, sample.humidity))
-        .lens(_.maxHumidity)
+        .focus(_.maxHumidity)
         .modify(max => maxHumidity(max, sample.humidity))
-        .lens(_.avgHumidity)
+        .focus(_.avgHumidity)
         .modify(avg => avgHumidity(avg, sample.humidity, sensor.numberOfProcessedMeasurements.value + 1))
-        .lens(_.numberOfProcessedMeasurements)
+        .focus(_.numberOfProcessedMeasurements)
         .modify(nopm =>
           if (sample.humidity === Humidity.Failed) nopm else Sensor.NumberOfProcessedMeasurements(NonNegLong.unsafeFrom(nopm.value + 1))
         )
     }
 
     private def sortByAvgHumidityDesc(statistics: Statistics): Statistics = {
-      statistics.lens(_.sensors).modify(_.sortBy(_.avgHumidity.value)(Order.reverse(Order[Humidity]).toOrdering))
+      statistics.focus(_.sensors).modify(_.sortBy(_.avgHumidity.value)(Order.reverse(Order[Humidity]).toOrdering))
     }
 
     private def minHumidity(minHumidity: MinHumidity, humidity: Humidity) = MinHumidity(

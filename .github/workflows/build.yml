@@ -10,7 +10,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Setup Scala
         uses: olafurpg/setup-scala@v12
-        java-version: graalvm-ce-java11@
+        with:
+          java-version: graalvm-ce-java11@
       - name: Cache coursier
         uses: actions/cache@v2
         with:
